@@ -7,6 +7,7 @@ import requests
 import re
 
 
+
 def log_http_response(response):
     logging.info(f"Status: {response.status_code}")
     logging.info(f"Content-type: {response.headers.get('content-type')}")
@@ -80,18 +81,59 @@ def process_whatsapp_message(body):
     name = body["entry"][0]["changes"][0]["value"]["contacts"][0]["profile"]["name"]
 
     message = body["entry"][0]["changes"][0]["value"]["messages"][0]
-    message_body = message["text"]["body"]
+    message_type = message.get("type", "text")
 
-    # TODO: implement custom function here
-    response = generate_response(message_body)
+    # Always mark inbound messages as read for better UX
+    try:
+        mark_as_read(message.get("id"))
+    except Exception as e:
+        logging.warning(f"Failed to mark message as read: {e}")
 
-    # OpenAI Integration
-    # response = generate_response(message_body, wa_id, name)
-    # response = process_text_for_whatsapp(response)
+    if message_type == "text":
+        message_body = message["text"]["body"]
+        response_text = generate_response(message_body)
 
-    data = get_text_message_input(current_app.config["RECIPIENT_WAID"], response)
-    send_message(data)
+        # OpenAI Integration
+        # response_text = generate_response(message_body, wa_id, name)
+        # response_text = process_text_for_whatsapp(response_text)
 
+        data = get_text_message_input(wa_id, response_text)
+        send_message(data)
+        return
+
+    # Media handling: image, audio, video, document
+    if message_type in {"image", "audio", "video", "document"}:
+        media_info = message.get(message_type, {})
+        media_id = media_info.get("id")
+        caption = media_info.get("caption", "")
+
+        try:
+            if not media_id:
+                raise ValueError("Missing media id in incoming message")
+            media_url = get_media_url(media_id)
+            media_bytes = download_media(media_url)
+            logging.info(
+                f"Received {message_type} from {wa_id}: id={media_id}, url={media_url}, size={len(media_bytes)} bytes"
+            )
+        except Exception as e:
+            logging.error(f"Failed to fetch incoming media: {e}")
+            send_text_message(wa_id, "Sorry, I couldn't fetch your media.")
+            return
+
+        # Simple acknowledgment reply (echo caption if present)
+        ack = f"Got your {message_type}!" + (f" Caption: {caption}" if caption else "")
+        try:
+            send_text_message(wa_id, ack)
+        except Exception as e:
+            logging.error(f"Failed to send ack for media: {e}")
+        return
+
+    # Fallback for unsupported types
+    logging.info(f"Received unsupported message type: {message_type}")
+    try:
+        send_text_message(wa_id, f"Unsupported message type: {message_type}")
+    except Exception as e:
+        logging.error(f"Failed to send unsupported type notice: {e}")
 
 def is_valid_whatsapp_message(body):
     """
@@ -105,3 +147,4 @@ def is_valid_whatsapp_message(body):
         and body["entry"][0]["changes"][0]["value"].get("messages")
         and body["entry"][0]["changes"][0]["value"]["messages"][0]
     )
+
