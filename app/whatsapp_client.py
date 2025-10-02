@@ -2,6 +2,7 @@ import logging
 import requests
 from requests.exceptions import RequestException
 import os
+import json
 from flask import current_app
 
 # Configure logging
@@ -74,11 +75,21 @@ class WhatsAppClient:
         }
 
         try:
+            logging.info(f"Sending image request to WhatsApp API:")
+            logging.info(f"URL: {url}")
+            logging.info(f"Data: {json.dumps(data, indent=2)}")
+            
             response = requests.post(url, headers=headers, json=data, timeout=10)
             response.raise_for_status()
-            return response.json()
+            
+            result = response.json()
+            logging.info(f"WhatsApp API Response: {json.dumps(result, indent=2)}")
+            
+            return result
         except RequestException as e:
             logging.error(f"Failed to send image: {e}")
+            if hasattr(e, 'response') and e.response:
+                logging.error(f"Response content: {e.response.text}")
             raise
 
     @staticmethod

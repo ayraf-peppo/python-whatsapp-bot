@@ -29,7 +29,7 @@ def handle_message():
         response: A tuple containing a JSON response and an HTTP status code.
     """
     body = request.get_json()
-    # logging.info(f"request body: {body}")
+    logging.info(f"Received webhook payload: {json.dumps(body, indent=2) if body else 'None'}")
 
     # Check if it's a WhatsApp status update
     if (
