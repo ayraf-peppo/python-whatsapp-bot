@@ -7,7 +7,10 @@ __pycache__/
 
 # Distribution / packaging
 .Python
+.venv/
+venv/
 env/
+ENV/
 build/
 develop-eggs/
 dist/
@@ -28,6 +31,7 @@ var/
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
+.kiro/
 
 # Installer logs
 pip-log.txt
