@@ -2,6 +2,7 @@ import logging
 import requests
 from requests.exceptions import RequestException
 import os
+from flask import current_app
 
 # Configure logging
 logging.basicConfig(
@@ -9,11 +10,22 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 
-# Load environment variables
-ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
-PHONE_NUMBER_ID = os.getenv("PHONE_NUMBER_ID")
-VERSION = os.getenv("VERSION", "v21.0")
-API_URL = f"https://graph.facebook.com/{VERSION}"
+# Helper function to get config values
+def _get_config_value(key: str, default=None):
+    """Get configuration value from Flask app context or environment variables."""
+    try:
+        # Try to get from Flask app config first
+        if current_app:
+            return current_app.config.get(key, os.getenv(key, default))
+    except RuntimeError:
+        # If no app context, fall back to environment variables
+        pass
+    return os.getenv(key, default)
+
+def _get_api_url():
+    """Get the API URL with proper version."""
+    version = _get_config_value("VERSION", "v21.0")
+    return f"https://graph.facebook.com/{version}"
 
 
 class WhatsAppClient:
@@ -33,9 +45,13 @@ class WhatsAppClient:
         Returns:
             API response dict
         """
-        url = f"{API_URL}/{PHONE_NUMBER_ID}/messages"
+        api_url = _get_api_url()
+        phone_number_id = _get_config_value("PHONE_NUMBER_ID")
+        access_token = _get_config_value("ACCESS_TOKEN")
+        
+        url = f"{api_url}/{phone_number_id}/messages"
         headers = {
-            "Authorization": f"Bearer {ACCESS_TOKEN}",
+            "Authorization": f"Bearer {access_token}",
             "Content-Type": "application/json",
         }
 
@@ -78,9 +94,13 @@ class WhatsAppClient:
         Returns:
             API response dict
         """
-        url = f"{API_URL}/{PHONE_NUMBER_ID}/messages"
+        api_url = _get_api_url()
+        phone_number_id = _get_config_value("PHONE_NUMBER_ID")
+        access_token = _get_config_value("ACCESS_TOKEN")
+        
+        url = f"{api_url}/{phone_number_id}/messages"
         headers = {
-            "Authorization": f"Bearer {ACCESS_TOKEN}",
+            "Authorization": f"Bearer {access_token}",
             "Content-Type": "application/json",
         }
 
@@ -121,9 +141,13 @@ class WhatsAppClient:
         Returns:
             API response dict
         """
-        url = f"{API_URL}/{PHONE_NUMBER_ID}/messages"
+        api_url = _get_api_url()
+        phone_number_id = _get_config_value("PHONE_NUMBER_ID")
+        access_token = _get_config_value("ACCESS_TOKEN")
+        
+        url = f"{api_url}/{phone_number_id}/messages"
         headers = {
-            "Authorization": f"Bearer {ACCESS_TOKEN}",
+            "Authorization": f"Bearer {access_token}",
             "Content-Type": "application/json",
         }
 
@@ -174,9 +198,13 @@ class WhatsAppClient:
         Returns:
             API response dict
         """
-        url = f"{API_URL}/{PHONE_NUMBER_ID}/messages"
+        api_url = _get_api_url()
+        phone_number_id = _get_config_value("PHONE_NUMBER_ID")
+        access_token = _get_config_value("ACCESS_TOKEN")
+        
+        url = f"{api_url}/{phone_number_id}/messages"
         headers = {
-            "Authorization": f"Bearer {ACCESS_TOKEN}",
+            "Authorization": f"Bearer {access_token}",
             "Content-Type": "application/json",
         }
 
@@ -220,9 +248,13 @@ class WhatsAppClient:
         Returns:
             Media ID that can be used in send_* methods
         """
-        url = f"{API_URL}/{PHONE_NUMBER_ID}/media"
+        api_url = _get_api_url()
+        phone_number_id = _get_config_value("PHONE_NUMBER_ID")
+        access_token = _get_config_value("ACCESS_TOKEN")
+        
+        url = f"{api_url}/{phone_number_id}/media"
         headers = {
-            "Authorization": f"Bearer {ACCESS_TOKEN}",
+            "Authorization": f"Bearer {access_token}",
         }
 
         try:
@@ -254,9 +286,12 @@ class WhatsAppClient:
         Returns:
             Download URL for the media
         """
-        url = f"{API_URL}/{media_id}"
+        api_url = _get_api_url()
+        access_token = _get_config_value("ACCESS_TOKEN")
+        
+        url = f"{api_url}/{media_id}"
         headers = {
-            "Authorization": f"Bearer {ACCESS_TOKEN}",
+            "Authorization": f"Bearer {access_token}",
         }
 
         try:
@@ -279,8 +314,10 @@ class WhatsAppClient:
         Returns:
             Media content as bytes
         """
+        access_token = _get_config_value("ACCESS_TOKEN")
+        
         headers = {
-            "Authorization": f"Bearer {ACCESS_TOKEN}",
+            "Authorization": f"Bearer {access_token}",
         }
 
         try:
@@ -302,9 +339,13 @@ class WhatsAppClient:
         Returns:
             API response dict
         """
-        url = f"{API_URL}/{PHONE_NUMBER_ID}/messages"
+        api_url = _get_api_url()
+        phone_number_id = _get_config_value("PHONE_NUMBER_ID")
+        access_token = _get_config_value("ACCESS_TOKEN")
+        
+        url = f"{api_url}/{phone_number_id}/messages"
         headers = {
-            "Authorization": f"Bearer {ACCESS_TOKEN}",
+            "Authorization": f"Bearer {access_token}",
             "Content-Type": "application/json",
         }
         data = {

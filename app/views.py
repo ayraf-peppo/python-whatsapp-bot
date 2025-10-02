@@ -9,6 +9,7 @@ from .utils.whatsapp_utils import (
     is_valid_whatsapp_message,
 )
 from .whatsapp_client import WhatsAppClient
+from .webhook_handler import WebhookHandler
 
 webhook_blueprint = Blueprint("webhook", __name__)
 
@@ -42,19 +43,8 @@ def handle_message():
 
     try:
         if is_valid_whatsapp_message(body):
-            # Minimal wiring: use WhatsAppClient for non-text types, keep text via utils
-            message = body["entry"][0]["changes"][0]["value"]["messages"][0]
-            msg_type = message.get("type", "text")
-
-            if msg_type in {"image", "audio", "video", "document"}:
-                try:
-                    WhatsAppClient.mark_as_read(message.get("id"))
-                except Exception as e:
-                    logging.warning(f"Failed to mark as read via client: {e}")
-                return jsonify({"status": "ok"}), 200
-
-            # Fallback to existing text handling
-            process_whatsapp_message(body)
+            # Use the new WebhookHandler for comprehensive message processing
+            WebhookHandler.process_whatsapp_message(body)
             return jsonify({"status": "ok"}), 200
         else:
             # if the request is not a WhatsApp API event, return an error
