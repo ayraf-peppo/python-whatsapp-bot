@@ -63,20 +63,29 @@ def verify():
     mode = request.args.get("hub.mode")
     token = request.args.get("hub.verify_token")
     challenge = request.args.get("hub.challenge")
+    
+    # Enhanced logging for debugging
+    logging.info(f"Webhook verification attempt:")
+    logging.info(f"  Mode: {mode}")
+    logging.info(f"  Token received: {token}")
+    logging.info(f"  Challenge: {challenge}")
+    logging.info(f"  Expected token: {current_app.config.get('VERIFY_TOKEN', 'NOT_SET')}")
+    
     # Check if a token and mode were sent
     if mode and token:
+        expected_token = current_app.config.get("VERIFY_TOKEN")
         # Check the mode and token sent are correct
-        if mode == "subscribe" and token == current_app.config["VERIFY_TOKEN"]:
+        if mode == "subscribe" and token == expected_token:
             # Respond with 200 OK and challenge token from the request
-            logging.info("WEBHOOK_VERIFIED")
+            logging.info("WEBHOOK_VERIFIED - Success!")
             return challenge, 200
         else:
             # Responds with '403 Forbidden' if verify tokens do not match
-            logging.info("VERIFICATION_FAILED")
+            logging.error(f"VERIFICATION_FAILED - Token mismatch. Expected: {expected_token}, Got: {token}")
             return jsonify({"status": "error", "message": "Verification failed"}), 403
     else:
         # Responds with '400 Bad Request' if verify tokens do not match
-        logging.info("MISSING_PARAMETER")
+        logging.error("MISSING_PARAMETER - Mode or token not provided")
         return jsonify({"status": "error", "message": "Missing parameters"}), 400
 
 
@@ -92,5 +101,16 @@ def webhook_post():
 @webhook_blueprint.route("/health", methods=["GET"])
 def health_check():
     return jsonify({"status": "healthy", "service": "whatsapp-bot"}), 200
+
+@webhook_blueprint.route("/debug", methods=["GET"])
+def debug_info():
+    """Debug endpoint to check configuration"""
+    return jsonify({
+        "status": "running",
+        "verify_token": current_app.config.get("VERIFY_TOKEN", "NOT_SET"),
+        "phone_number_id": current_app.config.get("PHONE_NUMBER_ID", "NOT_SET"),
+        "access_token_set": bool(current_app.config.get("ACCESS_TOKEN")),
+        "app_id": current_app.config.get("APP_ID", "NOT_SET")
+    }), 200
 
 
